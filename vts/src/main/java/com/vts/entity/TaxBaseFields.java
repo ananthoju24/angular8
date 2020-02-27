@@ -60,8 +60,9 @@ public class TaxBaseFields extends BaseEntity implements Serializable {
 	@Column(name = "F_CLEANING_TAX", nullable = false)
 	protected long cleaningTax;
 	
-	@Column(name = "F_VILLAGE_TAX", nullable = false)
-	protected long villageTax;
+	/*
+	 * @Column(name = "F_VILLAGE_TAX", nullable = false) protected long villageTax;
+	 */
 
 	@Column(name = "F_TOTAL_TAX", nullable = false)
 	protected long totalTax;

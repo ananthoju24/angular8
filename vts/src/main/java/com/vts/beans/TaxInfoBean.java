@@ -31,7 +31,8 @@ public class TaxInfoBean implements Serializable {
 	private long totalTax;
 	private String taxYear;
 	private String taxStatus;
-
+	private String paymentType;
+	
 	public long getTotalTax() {
 		this.totalTax = this.houseTax + this.libraryTax + this.lightTax + this.drainageTax + this.waterTax
 				+ this.kulaiNelaVariFee + this.kulaiDeposit + this.licenseFee + this.houseConstructionFee

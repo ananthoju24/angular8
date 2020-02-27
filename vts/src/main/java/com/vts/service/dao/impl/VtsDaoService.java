@@ -11,11 +11,14 @@ import org.springframework.stereotype.Service;
 import com.vts.entity.HouseInfo;
 import com.vts.entity.OwnerInfo;
 import com.vts.entity.TaxInfo;
+import com.vts.entity.TransactionInfo;
 import com.vts.entity.User;
 import com.vts.respository.service.HouseRepository;
 import com.vts.respository.service.OwnerRepository;
 import com.vts.respository.service.TaxRepository;
+import com.vts.respository.service.TransactionRepository;
 import com.vts.respository.service.UserRepository;
+import com.vts.util.TaxStatus;
 import com.vts.util.VtsUtil;
 
 @Service
@@ -31,7 +34,8 @@ public class VtsDaoService {
 	private HouseRepository houseRepository;
 	@Autowired
 	private TaxRepository taxRepository;
-
+	@Autowired
+	private TransactionRepository transactionRep;
 	@Autowired
 	VtsUtil vtsUtil;
 
@@ -81,24 +85,123 @@ public class VtsDaoService {
 
 	public List<TaxInfo> getTaxDetails(String houseNumber) {
 		List<TaxInfo> taxInfoList = null;
+		List<TaxInfo> partialTaxList = null;
 		logger.info("getTaxDetails :: request received to get tax details for house number ::" + houseNumber);
 		try {
-			taxInfoList = taxRepository.findByhouseNumber(houseNumber);
+			taxInfoList = taxRepository.findByhouseNumberandTaxStatusNot(houseNumber, TaxStatus.PARTIAL.getStatus());
+			HouseInfo houseInfo = new HouseInfo();
+			houseInfo.setHouseNumber(houseNumber);
+			partialTaxList = taxRepository.findByhouseNumberandTaxStatus(houseNumber, TaxStatus.PARTIAL.getStatus());
+
+			for (TaxInfo taxInfo : partialTaxList) {
+				taxInfoList.add(taxInfo);
+			}
+
+			logger.info("getTaxDetails :: response from db partialTaxList :: " + partialTaxList);
 		} catch (Exception e) {
 			logger.error("getTaxDetails :: failed to get tax details from DB ", e);
 		}
 		return taxInfoList;
 	}
 
+	public List<TaxInfo> getPrevTaxDetails(String houseNumber) {
+
+		List<TaxInfo> taxInfoList = null;
+		logger.info("getTaxDetails :: request received to get tax details for house number for filling data fileds with previous one::" + houseNumber);
+		try {
+			taxInfoList = taxRepository.findByhouseNumberLimit1(houseNumber);
+		} catch (Exception e) {
+			logger.error("getTaxDetails :: failed to get tax details from DB ", e);
+		}
+		return taxInfoList;
+	}
+
+	public TaxInfo getTaxDetailsByTaxID(long taxID) {
+
+		TaxInfo taxInfo = null;
+		logger.info("getTaxDetailsByTaxID :: request received to get tax details for taxID ::" + taxID);
+		try {
+			taxInfo = taxRepository.findBytaxID(taxID);
+		} catch (Exception e) {
+			logger.error("getTaxDetailsByTaxID :: failed to get tax details from DB ", e);
+		}
+		return taxInfo;
+	}
+
+	public TaxInfo getTaxDetails(String houseNumber, String taxYear) {
+		TaxInfo taxInfo = null;
+		logger.info("findByhouseNumber :: request received to fetchtax details:: housenumber ::" + houseNumber + " :: taxyear " + taxYear);
+		try {
+			taxInfo = taxRepository.findByhouseNumber(houseNumber, taxYear);
+		} catch (Exception e) {
+			logger.error("getTaxDetails :: failed to get tax details from DB ", e);
+		}
+		return taxInfo;
+	}
+
+	public TransactionInfo addTransaction(TransactionInfo tranInfo) {
+		TransactionInfo transactionInfo = null;
+		logger.info("addTransaction :: request received to fetchtax details:: " + tranInfo);
+		try {
+			transactionInfo = transactionRep.save(tranInfo);
+			logger.info("addTransaction :: response from db  " + transactionInfo);
+		} catch (Exception e) {
+			logger.error("getTaxDetails :: failed to get tax details from DB ", e);
+			transactionInfo = null;
+		}
+		return transactionInfo;
+
+	}
+
 	public TaxInfo getTotalDueTax(String houseNumber) {
 		logger.info("getTotalDueTax :: request received to get total due tax details for house number ::" + houseNumber);
 		TaxInfo totalDueTax = null;
 		try {
-		//	totalDueTax = taxRepository.groupByHouseNumber(houseNumber);
-			logger.info("getTotalDueTax :: db response totalDueTax "+totalDueTax);
+			// totalDueTax = taxRepository.groupByHouseNumber(houseNumber);
+			logger.info("getTotalDueTax :: db response totalDueTax " + totalDueTax);
 		} catch (Exception e) {
 			logger.error("getTotalDueTax :: failed to get total tax details from DB ", e);
 		}
 		return totalDueTax;
+	}
+
+	public void updateTaxStatus(Long taxid, TaxStatus status) {
+		logger.info("updateTaxStatus :: request taxID " + taxid + " status " + status);
+		try {
+			TaxInfo taxInfo = taxRepository.findBytaxID(taxid);
+			taxInfo.setTaxStatus(status);
+			taxRepository.save(taxInfo);
+			logger.info("updateTaxStatus :: response taxID " + taxid);
+		} catch (Exception e) {
+			logger.error("updateTaxStatus :: exception ", e);
+		}
+	}
+
+	public List<TransactionInfo> fetchTransaction(String houseNumber) {
+		logger.info("fetchTransaction :: fetching transaction for house num :" + houseNumber);
+		List<TransactionInfo> transactionList = null;
+		try {
+			transactionList = transactionRep.findBytaxID(houseNumber, TaxStatus.SUCCESS.getStatus());
+			logger.info("fetchTransaction :: fetching transaction response from DB" + transactionList);
+		} catch (Exception e) {
+			logger.error("fetchTransaction :: exception while processing", e);
+			transactionList = null;
+		}
+
+		return transactionList;
+	}
+	
+	public TransactionInfo fetchTransaction(long transactionID) {
+		logger.info("fetchTransaction :: fetching transaction for house num :" + transactionID);
+		TransactionInfo transactionInfo = null;
+		try {
+			transactionInfo = transactionRep.findByTranID(transactionID);
+			logger.info("fetchTransaction :: fetching transaction response from DB" + transactionInfo);
+		} catch (Exception e) {
+			logger.error("fetchTransaction :: exception while processing", e);
+			transactionInfo = null;
+		}
+
+		return transactionInfo;
 	}
 }
